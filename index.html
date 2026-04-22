@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Trening Last Hitu</title>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #game {
+      background: #222;
+      padding: 20px 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
+      text-align: center;
+      width: 400px;
+      max-width: 90vw;
+    }
+
+    #hp-bar-container {
+      width: 100%;
+      height: 30px;
+      background: #444;
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 15px 0;
+    }
+
+    #hp-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #4caf50, #f44336);
+      transition: width 0.1s linear;
+    }
+
+    #info {
+      margin: 10px 0;
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    #hit-btn {
+      background: #ff9800;
+      color: #111;
+    }
+
+    #restart-btn {
+      background: #2196f3;
+      color: #fff;
+    }
+
+    #result {
+      margin-top: 10px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    #settings {
+      margin-top: 15px;
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    #settings label {
+      display: block;
+      margin: 5px 0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <h1>Trening Last Hitu</h1>
+    <div>HP creepa: <span id="hp-text"></span></div>
+    <div id="hp-bar-container">
+      <div id="hp-bar"></div>
+    </div>
+    <div id="info"></div>
+    <button id="hit-btn">ATAK</button>
+    <button id="restart-btn">Nowy creep</button>
+    <div id="result"></div>
+
+    <div id="settings">
+      <label>
+        Szybkość spadania HP:
+        <input type="range" id="decay-speed" min="1" max="10" value="4">
+      </label>
+      <label>
+        Siła ataku:
+        <input type="range" id="hit-damage" min="5" max="60" value="40">
+      </label>
+    </div>
+  </div>
+
+  <script>
+    const hpText = document.getElementById('hp-text');
+    const hpBar = document.getElementById('hp-bar');
+    const info = document.getElementById('info');
+    const hitBtn = document.getElementById('hit-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const result = document.getElementById('result');
+    const decaySpeedInput = document.getElementById('decay-speed');
+    const hitDamageInput = document.getElementById('hit-damage');
+
+    let maxHP = 100;
+    let hp = maxHP;
+    let intervalId = null;
+    let isDead = false;
+
+    function updateUI() {
+      hpText.textContent = Math.max(0, Math.round(hp)) + ' / ' + maxHP;
+      const percent = Math.max(0, hp) / maxHP * 100;
+      hpBar.style.width = percent + '%';
+
+      if (!isDead) {
+        info.textContent = 'Czekaj na odpowiedni moment i dobij creepa jak najbliżej 0 HP.';
+      }
+    }
+
+    function startCreep() {
+      clearInterval(intervalId);
+      isDead = false;
+      result.textContent = '';
+
+      maxHP = 100;
+      hp = maxHP;
+
+      const decayBase = Number(decaySpeedInput.value);
+      const decayPerTick = decayBase * 0.25;
+
+      updateUI();
+
+      intervalId = setInterval(() => {
+        if (isDead) return;
+
+        hp -= decayPerTick;
+        if (hp <= 0) {
+          hp = 0;
+          isDead = true;
+          clearInterval(intervalId);
+          result.textContent = 'Creep umarł sam — last hit nieudany.';
+        }
+        updateUI();
+      }, 100);
+    }
+
+    function hit() {
+      if (isDead) return;
+
+      const damage = Number(hitDamageInput.value);
+      hp -= damage;
+
+      if (hp <= 0) {
+        const overshoot = Math.abs(hp);
+        hp = 0;
+        isDead = true;
+        clearInterval(intervalId);
+
+        if (overshoot <= 5) {
+          result.textContent = 'Idealny last hit! Przebiłeś tylko o ' + overshoot.toFixed(1) + ' HP.';
+        } else if (overshoot <= 15) {
+          result.textContent = 'Całkiem dobrze, ale może być lepiej. Przebiłeś o ' + overshoot.toFixed(1) + ' HP.';
+        } else {
+          result.textContent = 'Za mocno uderzyłeś: ' + overshoot.toFixed(1) + ' dodatkowego obrażenia.';
+        }
+      } else {
+        result.textContent = 'Za wcześnie! Creep ma jeszcze ' + hp.toFixed(1) + ' HP.';
+      }
+
+      updateUI();
+    }
+
+    hitBtn.addEventListener('click', hit);
+    restartBtn.addEventListener('click', startCreep);
+
+    startCreep();
+  </script>
+</body>
+</html>
+
